@@ -1,0 +1,71 @@
+datasource db {
+  provider = postgresql
+  url      = env(DATABASE_URL)
+}
+
+generator client {
+  provider = prisma-client-js
+}
+
+
+  USER MODEL
+
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String
+  name          String
+  role          Role     @default(USER)
+  isVerified    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  monthlyUploads Int      @default(0)       FREE PLAN → నెలకు 5 ఫైల్స్
+  lastReset      DateTime @default(now())   Monthly reset tracking
+
+  files         ProcessedFile[]
+  logs          SystemLog[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+
+  FILE HISTORY MODEL
+
+
+model ProcessedFile {
+  id        String   @id @default(cuid())
+  userId    String
+  fileName  String
+  fileUrl   String     Where file is stored (S3  local  cloud)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields [userId], references [id])
+}
+
+
+  SYSTEM LOGS MODEL
+
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String    LOGIN, FILE_UPLOAD, LIMIT_REACHED, ERROR
+  details   String
+  createdAt DateTime @default(now())
+
+  user      User    @relation(fields [userId], references [id])
+}
+
+
+  MONTHLY USAGE RESET JOB TRACKING
+
+
+model UsageReset {
+  id        String   @id @default(cuid())
+  resetDate DateTime @default(now())
+}
